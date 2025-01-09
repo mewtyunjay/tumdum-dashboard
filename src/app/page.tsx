@@ -31,8 +31,8 @@ const PricingDashboard = () => {
   // Calculated values
   const [recommendedPrice, setRecommendedPrice] = useState<number | null>(null);
   const [comparison, setComparison] = useState({
-    zomato: { customerPrice: 0, restaurantEarning: 0, deliveryFee: 0, effectiveCommission: 0, platformFee: 0, gst: 0 },
-    tumdum: { customerPrice: 0, restaurantEarning: 0, deliveryFee: 0, platformFee: 0, gst: 0 }
+    zomato: { customerPrice: 0, restaurantEarning: 0, deliveryFee: 0, effectiveCommission: 0, platformFee: 0, smallOrderFee: 0, gst: 0 },
+    tumdum: { customerPrice: 0, restaurantEarning: 0, deliveryFee: 0, platformFee: 0, smallOrderFee: 0, gst: 0 }
   });
 
   // Calculate pricing and earnings
@@ -52,6 +52,7 @@ const PricingDashboard = () => {
       : calculatedZomatoDeliveryFee;
 
     const zomatoPlatformFee = 10; // Fixed ₹10 platform fee
+    const zomatoSmallOrderFee = Number(zomatoListedPrice) < 150 ? 15 : 0; // ₹15 fee for orders under ₹150
     const zomatoGst = Number(zomatoListedPrice) * 0.05; // 5% GST on listing price
     
     // Apply discount if provided (as absolute value)
@@ -67,7 +68,7 @@ const PricingDashboard = () => {
     
     // TumDum calculations
     const tumDumPlatformFee = 5; // Fixed ₹5 platform fee
-    const recommendedBasePrice = Math.ceil(targetEarning + tumDumPlatformFee); // Add platform fee to ensure target earning after fees
+    const recommendedBasePrice = Math.ceil(targetEarning); // No need to add platform fee since it doesn't affect restaurant earnings
     const tumDumDeliveryFee = Number(distance) * 9;
     const tumDumGst = recommendedBasePrice * 0.05; // 5% GST on listing price
     
@@ -75,18 +76,20 @@ const PricingDashboard = () => {
     
     setComparison({
       zomato: {
-        customerPrice: discountedPrice + zomatoDeliveryFee + zomatoPlatformFee + zomatoGst,
+        customerPrice: discountedPrice + zomatoDeliveryFee + zomatoPlatformFee + zomatoGst + zomatoSmallOrderFee,
         restaurantEarning: zomatoEarning,
         deliveryFee: zomatoDeliveryFee,
         effectiveCommission: Number(effectiveCommission),
         platformFee: zomatoPlatformFee,
+        smallOrderFee: zomatoSmallOrderFee,
         gst: zomatoGst
       },
       tumdum: {
         customerPrice: recommendedBasePrice + tumDumDeliveryFee + tumDumPlatformFee + tumDumGst,
-        restaurantEarning: recommendedBasePrice - tumDumPlatformFee, // Subtract flat platform fee
+        restaurantEarning: recommendedBasePrice, // Restaurant keeps the full base price
         deliveryFee: tumDumDeliveryFee,
         platformFee: tumDumPlatformFee,
+        smallOrderFee: 0,
         gst: tumDumGst
       }
     });
@@ -279,12 +282,16 @@ const PricingDashboard = () => {
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">GST (5%)</p>
-                          <p className="text-xl font-semibold">₹{comparison.zomato.gst.toFixed(2)}</p>
-                        </div>
-                        <div>
                           <p className="text-sm text-muted-foreground">Platform Fee</p>
                           <p className="text-xl font-semibold">₹{comparison.zomato.platformFee}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Small Order Fee</p>
+                          <p className="text-xl font-semibold">₹{comparison.zomato.smallOrderFee}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">GST (5%)</p>
+                          <p className="text-xl font-semibold">₹{comparison.zomato.gst.toFixed(2)}</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">You Earn</p>
@@ -313,12 +320,16 @@ const PricingDashboard = () => {
                           <p className="text-xl font-semibold text-green-500">₹0</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">GST (5%)</p>
-                          <p className="text-xl font-semibold">₹{comparison.tumdum.gst.toFixed(2)}</p>
-                        </div>
-                        <div>
                           <p className="text-sm text-muted-foreground">Platform Fee</p>
                           <p className="text-xl font-semibold">₹{comparison.tumdum.platformFee}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Small Order Fee</p>
+                          <p className="text-xl font-semibold">₹{comparison.tumdum.smallOrderFee}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">GST (5%)</p>
+                          <p className="text-xl font-semibold">₹{comparison.tumdum.gst.toFixed(2)}</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">You Earn</p>
