@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@supabase/supabase-js';
 import { Modal } from '@/components/ui/modal';
+import { Trash2 } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,6 +47,7 @@ export default function RecordsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<AnalysisRecord | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchRecords() {
@@ -73,6 +75,29 @@ export default function RecordsPage() {
 
     fetchRecords();
   }, [restaurantFilter]);
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click from triggering
+    if (deleting) return; // Prevent multiple deletes
+
+    try {
+      setDeleting(id);
+      const { error } = await supabase
+        .from('analysis_history')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update the local state to remove the deleted record
+      setRecords(records.filter(record => record.id !== id));
+    } catch (err) {
+      console.error('Error deleting record:', err);
+      // You might want to show an error message to the user here
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   return (
     <main className="container px-4 sm:px-8 lg:px-12 py-8 space-y-8">
@@ -113,6 +138,7 @@ export default function RecordsPage() {
                     <th className="text-right py-3 px-4">Zomato Price</th>
                     <th className="text-right py-3 px-4">TumDum Price</th>
                     <th className="text-right py-3 px-4">Extra Profit</th>
+                    <th className="w-16"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -133,6 +159,20 @@ export default function RecordsPage() {
                       <td className="text-right py-3 px-4">₹{record.comparison_tumdum_customer_price}</td>
                       <td className="text-right py-3 px-4 text-green-600">
                         ₹{(record.comparison_tumdum_restaurant_earning - record.comparison_zomato_restaurant_earning).toFixed(2)}
+                      </td>
+                      <td className="w-16 px-4">
+                        <button
+                          onClick={(e) => handleDelete(record.id, e)}
+                          disabled={deleting === record.id}
+                          className={`p-2 rounded-full transition-colors ${
+                            deleting === record.id
+                              ? 'opacity-50 cursor-not-allowed'
+                              : 'hover:bg-red-100 text-red-600 hover:text-red-700'
+                          }`}
+                          title="Delete record"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))}
