@@ -1,5 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import { Navigation } from '@/components/ui/navigation';
 
 export const metadata: Metadata = {
   title: 'TumDum Dashboard',
@@ -13,7 +14,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scrollbar">
-      <body className="scrollbar">{children}</body>
+      <body className="scrollbar">
+        <Navigation />
+        <div className="pt-20">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }

@@ -19,6 +19,8 @@ import {
 
 const PricingDashboard = () => {
   // Core pricing inputs with empty defaults
+  const [restaurantName, setRestaurantName] = useState('');
+  const [dishName, setDishName] = useState('');
   const [menuPrice, setMenuPrice] = useState<number | ''>('');
   const [zomatoListedPrice, setZomatoListedPrice] = useState<number | ''>('');
   const [zomatoCommission, setZomatoCommission] = useState<number | ''>('');
@@ -118,16 +120,12 @@ const PricingDashboard = () => {
     });
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container px-4 sm:px-8 lg:px-12">
-          <div className="flex h-20 items-center">
-            <h1 className="text-2xl font-semibold tracking-tight">TumDum Pricing Analysis</h1>
-          </div>
-        </div>
-      </header>
-
       <main className="container px-4 sm:px-8 lg:px-12 py-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Input Card */}
@@ -137,6 +135,34 @@ const PricingDashboard = () => {
               <p className="text-sm text-muted-foreground">Enter the order details to compare platforms</p>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label className="text-base">Restaurant Name</Label>
+                <Input
+                  type="text"
+                  value={restaurantName}
+                  onChange={(e) => setRestaurantName(e.target.value)}
+                  placeholder="Enter restaurant name"
+                  className="h-12 text-base"
+                  list="restaurants"
+                />
+                <datalist id="restaurants">
+                  {/* This will be populated from your backend */}
+                </datalist>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-base">Dish Name</Label>
+                <Input
+                  type="text"
+                  value={dishName}
+                  onChange={(e) => setDishName(e.target.value)}
+                  placeholder="Enter dish name"
+                  className="h-12 text-base"
+                  list="dishes"
+                />
+                <datalist id="dishes">
+                  {/* This will be populated from your backend */}
+                </datalist>
+              </div>
               <div className="space-y-2">
                 <Label className="text-base">Menu Price (₹)</Label>
                 <Input
@@ -364,6 +390,69 @@ const PricingDashboard = () => {
                       </p>
                     </div>
                   </div>
+
+                  {/* Save Button */}
+                  <button
+                    onClick={async () => {
+                      try {
+                        setIsSaving(true);
+                        setSaveError(null);
+                        setSaveSuccess(false);
+
+                        const response = await fetch('/api/analysis', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            restaurantName,
+                            dishName,
+                            menuPrice,
+                            zomatoListedPrice,
+                            zomatoCommission,
+                            zomatoDiscount,
+                            distance,
+                            zomatoDeliveryFeeOverride,
+                            isGoldEnabled,
+                            profitMargin,
+                            comparison
+                          }),
+                        });
+
+                        const data = await response.json();
+                        
+                        if (!data.success) {
+                          throw new Error(data.error || 'Failed to save analysis');
+                        }
+
+                        setSaveSuccess(true);
+                        setTimeout(() => setSaveSuccess(false), 3000);
+                      } catch (error) {
+                        setSaveError(error instanceof Error ? error.message : 'Failed to save analysis');
+                      } finally {
+                        setIsSaving(false);
+                      }
+                    }}
+                    disabled={isSaving}
+                    className={`w-full mt-6 py-3 px-4 rounded-lg transition-colors relative ${
+                      isSaving 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : saveSuccess 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : 'bg-green-600 hover:bg-green-700'
+                    } text-white`}
+                  >
+                    {isSaving ? (
+                      <span>Saving...</span>
+                    ) : saveSuccess ? (
+                      <span>✓ Saved Successfully</span>
+                    ) : (
+                      <span>Save Analysis</span>
+                    )}
+                  </button>
+                  {saveError && (
+                    <p className="mt-2 text-sm text-red-500 text-center">{saveError}</p>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
